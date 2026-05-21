@@ -85,18 +85,7 @@ export default class GitHubAutocompletePlugin extends Plugin {
 	}
 
 	async loadSettings() {
-		const loadedData = (await this.loadData()) as Partial<GitHubPluginSettings> & { githubToken?: string };
-		
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, loadedData);
-
-		// Migrate old token to new secure storage
-		if (loadedData && loadedData.githubToken) {
-			console.debug("GitHub Autocomplete: Migrating token to secure storage.");
-			const tokenManager = new TokenManager(this.app);
-			tokenManager.migratePlaintextToken(loadedData.githubToken);
-			delete (this.settings as unknown as {githubToken?: string}).githubToken;
-			await this.saveData(this.settings);
-		}
+		this.settings = Object.assign({}, DEFAULT_SETTINGS, (await this.loadData()) as Partial<GitHubPluginSettings>);
 	}
 
 	async saveSettings() {
