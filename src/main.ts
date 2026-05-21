@@ -1,99 +1,91 @@
-import {App, Editor, MarkdownView, Modal, Notice, Plugin} from 'obsidian';
-import {DEFAULT_SETTINGS, MyPluginSettings, SampleSettingTab} from "./settings";
+import { Plugin, requestUrl } from 'obsidian';
+import { GitHubPluginSettingTab } from './settings';
+import { IssueSuggester } from './suggester';
+import { DEFAULT_SETTINGS, GitHubIssue, GitHubPluginSettings } from './types';
 
-// Remember to rename these classes and interfaces!
-
-export default class MyPlugin extends Plugin {
-	settings: MyPluginSettings;
+export default class GitHubAutocompletePlugin extends Plugin {
+	settings: GitHubPluginSettings;
+	issuesCache: GitHubIssue[] = [];
 
 	async onload() {
 		await this.loadSettings();
 
-		// This creates an icon in the left ribbon.
-		this.addRibbonIcon('dice', 'Sample', (evt: MouseEvent) => {
-			// Called when the user clicks the icon.
-			new Notice('This is a notice!');
-		});
+		// Add settings tab
+		this.addSettingTab(new GitHubPluginSettingTab(this.app, this));
 
-		// This adds a status bar item to the bottom of the app. Does not work on mobile apps.
-		const statusBarItemEl = this.addStatusBarItem();
-		statusBarItemEl.setText('Status bar text');
+		// Register the autocomplete suggester
+		this.registerEditorSuggest(new IssueSuggester(this.app, this));
 
-		// This adds a simple command that can be triggered anywhere
+		// Command to manually refresh the issue cache
 		this.addCommand({
-			id: 'open-modal-simple',
-			name: 'Open modal (simple)',
-			callback: () => {
-				new SampleModal(this.app).open();
-			}
-		});
-		// This adds an editor command that can perform some operation on the current editor instance
-		this.addCommand({
-			id: 'replace-selected',
-			name: 'Replace selected content',
-			editorCallback: (editor: Editor, view: MarkdownView) => {
-				editor.replaceSelection('Sample editor command');
-			}
-		});
-		// This adds a complex command that can check whether the current state of the app allows execution of the command
-		this.addCommand({
-			id: 'open-modal-complex',
-			name: 'Open modal (complex)',
-			checkCallback: (checking: boolean) => {
-				// Conditions to check
-				const markdownView = this.app.workspace.getActiveViewOfType(MarkdownView);
-				if (markdownView) {
-					// If checking is true, we're simply "checking" if the command can be run.
-					// If checking is false, then we want to actually perform the operation.
-					if (!checking) {
-						new SampleModal(this.app).open();
-					}
-
-					// This command will only show up in Command Palette when the check function returns true
-					return true;
-				}
-				return false;
-			}
+			id: 'refresh-github-issues',
+			name: 'Refresh GitHub Issues Cache',
+			callback: () => { this.fetchIssues(); }
 		});
 
-		// This adds a settings tab so the user can configure various aspects of the plugin
-		this.addSettingTab(new SampleSettingTab(this.app, this));
-
-		// If the plugin hooks up any global DOM events (on parts of the app that doesn't belong to this plugin)
-		// Using this function will automatically remove the event listener when this plugin is disabled.
-		this.registerDomEvent(document, 'click', (evt: MouseEvent) => {
-			new Notice("Click");
-		});
-
-		// When registering intervals, this function will automatically clear the interval when the plugin is disabled.
-		this.registerInterval(window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000));
-
+		// Fetch issues on load
+		this.fetchIssues();
 	}
 
-	onunload() {
+	/**
+	 * Fetches open issues and PRs from the configured GitHub repository.
+	 * Uses pagination to fetch up to 300 items to ensure older issues are included.
+	 */
+	async fetchIssues() {
+		const repo = this.settings.repo;
+		if (!repo) return;
+
+		console.log(`GitHub Autocomplete: Fetching issues for ${repo}...`);
+		
+		let allIssues: GitHubIssue[] = [];
+		const maxPages = 3;
+		const perPage = 100;
+
+		try {
+			for (let page = 1; page <= maxPages; page++) {
+				const url = `https://api.github.com/repos/${repo}/issues?state=open&per_page=${perPage}&page=${page}`;
+				const headers: Record<string, string> = {
+					'Accept': 'application/vnd.github.v3+json',
+					'X-GitHub-Api-Version': '2022-11-28'
+				};
+
+				if (this.settings.githubToken) {
+					// Prefer Bearer for modern tokens, but GitHub still supports 'token' for classic ones.
+					// Bearer is generally safer for both types.
+					headers['Authorization'] = `Bearer ${this.settings.githubToken}`;
+				}
+
+				const response = await requestUrl({
+					url,
+					method: 'GET',
+					headers
+				});
+
+				if (response.status === 200) {
+					const issues: GitHubIssue[] = response.json;
+					allIssues = allIssues.concat(issues);
+					
+					// If we got fewer than perPage items, we've reached the last page
+					if (issues.length < perPage) break;
+				} else {
+					console.error(`GitHub Autocomplete: Failed to fetch issues (Page ${page})`, response.status, response.text);
+					break; 
+				}
+			}
+
+			this.issuesCache = allIssues;
+			console.log(`GitHub Autocomplete: Cached ${this.issuesCache.length} issues.`);
+		} catch (e) {
+			console.error("GitHub Autocomplete: Network error while fetching issues", e);
+		}
 	}
 
 	async loadSettings() {
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData() as Partial<MyPluginSettings>);
+		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
 	}
 
 	async saveSettings() {
 		await this.saveData(this.settings);
-	}
-}
-
-class SampleModal extends Modal {
-	constructor(app: App) {
-		super(app);
-	}
-
-	onOpen() {
-		let {contentEl} = this;
-		contentEl.setText('Woah!');
-	}
-
-	onClose() {
-		const {contentEl} = this;
-		contentEl.empty();
+		this.fetchIssues(); // Refresh cache when settings change
 	}
 }
