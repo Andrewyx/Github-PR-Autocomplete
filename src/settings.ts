@@ -14,10 +14,10 @@ export class GitHubPluginSettingTab extends PluginSettingTab {
 		containerEl.empty();
 
 		new Setting(containerEl)
-			.setName('GitHub Repository')
+			.setName('GitHub repository')
 			.setDesc('Format: owner/repo')
 			.addText(text => text
-				.setPlaceholder('UBC-Thunderbots/Software')
+				.setPlaceholder('Owner/repo')
 				.setValue(this.plugin.settings.repo)
 				.onChange(async (value) => {
 					this.plugin.settings.repo = value;
@@ -25,8 +25,8 @@ export class GitHubPluginSettingTab extends PluginSettingTab {
 				}));
 
 		new Setting(containerEl)
-			.setName('Trigger String')
-			.setDesc('The character or string that triggers the autocompletion (e.g. @ or gh#). Note: Using just "#" may conflict with Obsidian\'s built-in tag suggester.')
+			.setName('Trigger string')
+			.setDesc('The character or string that triggers the autocompletion (e.g. @ or gh#). Note: using just "#" may conflict with Obsidian\'s built-in tag suggester.')
 			.addText(text => text
 				.setPlaceholder('@')
 				.setValue(this.plugin.settings.triggerString)
@@ -36,10 +36,10 @@ export class GitHubPluginSettingTab extends PluginSettingTab {
 				}));
 
 		new Setting(containerEl)
-			.setName('GitHub Personal Access Token')
+			.setName('GitHub personal access token')
 			.setDesc('Optional, but prevents API rate limiting and allows fetching from private repositories.')
 			.addText(text => text
-				.setPlaceholder('ghp_...')
+				.setPlaceholder('Your token')
 				.setValue(this.plugin.settings.githubToken)
 				.onChange(async (value) => {
 					this.plugin.settings.githubToken = value;

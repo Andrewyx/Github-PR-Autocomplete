@@ -19,12 +19,12 @@ export default class GitHubAutocompletePlugin extends Plugin {
 		// Command to manually refresh the issue cache
 		this.addCommand({
 			id: 'refresh-github-issues',
-			name: 'Refresh GitHub Issues Cache',
-			callback: () => { this.fetchIssues(); }
+			name: 'Refresh GitHub issues cache',
+			callback: () => { void this.fetchIssues(); }
 		});
 
 		// Fetch issues on load
-		this.fetchIssues();
+		void this.fetchIssues();
 	}
 
 	/**
@@ -35,7 +35,7 @@ export default class GitHubAutocompletePlugin extends Plugin {
 		const repo = this.settings.repo;
 		if (!repo) return;
 
-		console.log(`GitHub Autocomplete: Fetching issues for ${repo}...`);
+		console.debug(`GitHub Autocomplete: Fetching issues for ${repo}...`);
 		
 		let allIssues: GitHubIssue[] = [];
 		const maxPages = 3;
@@ -62,7 +62,7 @@ export default class GitHubAutocompletePlugin extends Plugin {
 				});
 
 				if (response.status === 200) {
-					const issues: GitHubIssue[] = response.json;
+					const issues = response.json as GitHubIssue[];
 					allIssues = allIssues.concat(issues);
 					
 					// If we got fewer than perPage items, we've reached the last page
@@ -74,18 +74,18 @@ export default class GitHubAutocompletePlugin extends Plugin {
 			}
 
 			this.issuesCache = allIssues;
-			console.log(`GitHub Autocomplete: Cached ${this.issuesCache.length} issues.`);
+			console.debug(`GitHub Autocomplete: Cached ${this.issuesCache.length} issues.`);
 		} catch (e) {
 			console.error("GitHub Autocomplete: Network error while fetching issues", e);
 		}
 	}
 
 	async loadSettings() {
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+		this.settings = Object.assign({}, DEFAULT_SETTINGS, (await this.loadData()) as Partial<GitHubPluginSettings>);
 	}
 
 	async saveSettings() {
 		await this.saveData(this.settings);
-		this.fetchIssues(); // Refresh cache when settings change
+		void this.fetchIssues(); // Refresh cache when settings change
 	}
 }
