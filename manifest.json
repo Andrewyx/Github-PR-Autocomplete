@@ -2,7 +2,7 @@
 	"id": "github-pr-autocomplete",
 	"name": "GitHub PR Autocomplete",
 	"version": "1.0.0",
-	"minAppVersion": "0.15.0",
+	"minAppVersion": "1.11.4",
 	"description": "Autocompletes GitHub issues and PRs when typing #",
 	"author": "Andrew Mao",
 	"authorUrl": "",

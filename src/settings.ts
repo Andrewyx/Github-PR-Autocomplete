@@ -7,17 +7,19 @@ export class GitHubPluginSettingTab extends PluginSettingTab {
 	tokens: GitHubToken[] = [];
 	newTokenName: string = '';
 	newTokenValue: string = '';
+	private tokenManager: TokenManager;
 
 	constructor(app: App, plugin: GitHubAutocompletePlugin) {
 		super(app, plugin);
 		this.plugin = plugin;
+		this.tokenManager = new TokenManager(app);
 	}
 
 	display(): void {
 		const {containerEl} = this;
 		containerEl.empty();
 		
-		this.tokens = TokenManager.loadTokens(this.app.vault.getName());
+		this.tokens = this.tokenManager.loadTokens();
 
 		new Setting(containerEl)
 			.setName('GitHub repository')
@@ -56,7 +58,7 @@ export class GitHubPluginSettingTab extends PluginSettingTab {
 					.setWarning()
 					.onClick(() => {
 						this.tokens = this.tokens.filter(t => t.id !== token.id);
-						TokenManager.saveTokens(this.app.vault.getName(), this.tokens);
+						this.tokenManager.saveTokens(this.tokens);
 						this.display();
 						void this.plugin.fetchIssues();
 					}));
@@ -105,7 +107,7 @@ export class GitHubPluginSettingTab extends PluginSettingTab {
 						name: this.newTokenName,
 						token: this.newTokenValue
 					});
-					TokenManager.saveTokens(this.app.vault.getName(), this.tokens);
+					this.tokenManager.saveTokens(this.tokens);
 					this.newTokenName = '';
 					this.newTokenValue = '';
 					this.display();

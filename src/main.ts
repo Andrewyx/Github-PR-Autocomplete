@@ -41,7 +41,8 @@ export default class GitHubAutocompletePlugin extends Plugin {
 		let allIssues: GitHubIssue[] = [];
 		const maxPages = 3;
 		const perPage = 100;
-		const tokens = TokenManager.loadTokens(this.app.vault.getName());
+		const tokenManager = new TokenManager(this.app);
+		const tokens = tokenManager.loadTokens();
 		const token = tokens.length > 0 ? tokens[0]?.token : null;
 
 		try {
@@ -91,7 +92,8 @@ export default class GitHubAutocompletePlugin extends Plugin {
 		// Migrate old token to new secure storage
 		if (loadedData && loadedData.githubToken) {
 			console.debug("GitHub Autocomplete: Migrating token to secure storage.");
-			TokenManager.migratePlaintextToken(this.app.vault.getName(), loadedData.githubToken);
+			const tokenManager = new TokenManager(this.app);
+			tokenManager.migratePlaintextToken(loadedData.githubToken);
 			delete (this.settings as unknown as {githubToken?: string}).githubToken;
 			await this.saveData(this.settings);
 		}
