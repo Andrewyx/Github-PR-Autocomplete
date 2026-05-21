@@ -2,6 +2,7 @@ import { Plugin, requestUrl } from 'obsidian';
 import { GitHubPluginSettingTab } from './settings';
 import { IssueSuggester } from './suggester';
 import { DEFAULT_SETTINGS, GitHubIssue, GitHubPluginSettings } from './types';
+import { TokenManager } from './security';
 
 export default class GitHubAutocompletePlugin extends Plugin {
 	settings: GitHubPluginSettings;
@@ -40,6 +41,9 @@ export default class GitHubAutocompletePlugin extends Plugin {
 		let allIssues: GitHubIssue[] = [];
 		const maxPages = 3;
 		const perPage = 100;
+		const tokenManager = new TokenManager(this.app);
+		const tokens = tokenManager.loadTokens();
+		const token = tokens.length > 0 ? tokens[0]?.token : null;
 
 		try {
 			for (let page = 1; page <= maxPages; page++) {
@@ -49,10 +53,10 @@ export default class GitHubAutocompletePlugin extends Plugin {
 					'X-GitHub-Api-Version': '2022-11-28'
 				};
 
-				if (this.settings.githubToken) {
+				if (token) {
 					// Prefer Bearer for modern tokens, but GitHub still supports 'token' for classic ones.
 					// Bearer is generally safer for both types.
-					headers['Authorization'] = `Bearer ${this.settings.githubToken}`;
+					headers['Authorization'] = `Bearer ${token}`;
 				}
 
 				const response = await requestUrl({

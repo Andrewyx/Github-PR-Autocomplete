@@ -6,3 +6,11 @@ available in the app when your plugin is enabled.
 If your plugin does not need CSS, delete this file.
 
 */
+
+.github-token-valid {
+	color: var(--text-success);
+}
+
+.github-token-invalid {
+	color: var(--text-error);
+}
