@@ -10,6 +10,6 @@ export interface GitHubPluginSettings {
 }
 
 export const DEFAULT_SETTINGS: GitHubPluginSettings = {
-	repo: 'UBC-Thunderbots/Software',
+	repo: 'owner/repo',
 	triggerString: '@'
 }

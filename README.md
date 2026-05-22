@@ -12,7 +12,7 @@ This plugin for [Obsidian](https://obsidian.md) provides an autocomplete suggest
 
 ## How to use
 
-1.  **Configure Repository**: In the plugin settings, enter your GitHub repository in the format `owner/repo` (e.g., `UBC-Thunderbots/Software`).
+1.  **Configure Repository**: In the plugin settings, enter your GitHub repository in the format `owner/repo` (e.g., `Andrewyx/Github-PR-Autocomplete`).
 2.  **Add Token (Optional but Recommended)**: 
     *   Create a [GitHub Personal Access Token](https://github.com/settings/tokens) (classic) with `repo` scope.
     *   In the plugin settings, add a new token with a name (e.g., "Work") and the token value.
